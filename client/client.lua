@@ -5,6 +5,7 @@
 ESX = nil
 QBCore = nil
 local framework, PlayerData, target
+local QBCore = exports['qb-core']:GetCoreObject()
 
 CreateThread(function()
     if framework then return end
@@ -30,6 +31,13 @@ CreateThread(function()
 
         RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
             PlayerData.job = job
+        end)
+        RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+            PlayerData = QBCore.Functions.GetPlayerData()
+        end)
+
+        RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+            PlayerData = {}
         end)
     end
 end)
@@ -62,14 +70,22 @@ AddEventHandler('wasabi_elevator:goToFloor', function(data)
 	SetEntityHeading(ped, heading and heading or 0.0)
 	Wait(3000)
 	DoScreenFadeIn(1500)
+    -- Variables For Notify
+    -- local floorTitle = Config.Elevators[data.elevator][data.floor].title
+    --? destination description from Config.Elevators
+    local Elevatordescription = Config.Elevators[data.elevator][data.floor].description
+    --? Add notification with the destination description
+    QBCore.Functions.Notify("Arrived at " .. Elevatordescription, "success", 2500)
 end)
 
 AddEventHandler('wasabi_elevator:noAccess', function()
-    lib.notify({
-        title = 'No Access',
-        description = 'You do not have access to this floor',
-        type = 'error'
-    })
+    -- Disable  ox_lib Notify By Yuvraj
+    -- lib.notify({
+    --     title = 'No Access',
+    --     description = 'You do not have access to this floor',
+    --     type = 'error'
+    -- })
+    QBCore.Functions.Notify("You Are Not Authorized To Access This Floor", "error", 2500)
 end)
 
 AddEventHandler('wasabi_elevator:openMenu', function(data)
@@ -77,7 +93,9 @@ AddEventHandler('wasabi_elevator:openMenu', function(data)
     local floor = data.floor
     local elevatorData = Config.Elevators[elevator]
     local Options = {}
-
+    -- Get the player's gender
+    local Gender = QBCore.Functions.GetPlayerData().charinfo.gender == 0 and 'Male' or 'Female'
+    local Charidentity = Gender == 'Male' and 'Sir' or 'Mam'
     for k,v in pairs(elevatorData) do
         if k == floor then
             table.insert(Options, {
@@ -122,9 +140,12 @@ AddEventHandler('wasabi_elevator:openMenu', function(data)
             })
         end
     end
+
+    -- QBCore.Functions.Notify("Welcome Sir Please Select Your Destination", "info", 1500)
+    QBCore.Functions.Notify("Welcome " .. Charidentity .. " Please Select Your Destination", "info", 1500)
     lib.registerContext({
 		id = 'elevator_menu',
-		title = 'Elevator Menu',
+		title = 'Select Your Destination Floor',
 		options = Options
 	})
 
@@ -146,13 +167,13 @@ CreateThread(function()
                     options = {
                         {
                             event = 'wasabi_elevator:openMenu',
-                            icon = 'fa-solid fa-hand',
-                            label = 'Interact',
+                            icon = 'fas fa-elevator',
+                            label = 'Use Elevator',
                             elevator = k,
                             floor = a
                         },
                     },
-                    distance = 1.5 
+                    distance = 1.5
                 })
             else
                 exports[target]:AddBoxZone(k..':'..a, b.coords, b.target.width, b.target.length, {
@@ -166,8 +187,8 @@ CreateThread(function()
                     options = {
                         {
                             event = 'wasabi_elevator:openMenu',
-                            icon = 'fa-solid fa-hand',
-                            label = 'Interact',
+                            icon = 'fas fa-elevator',
+                            label = 'Use Elevator',
                             elevator = k,
                             floor = a
                         },
